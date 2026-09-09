@@ -49,8 +49,13 @@ public class CustodyEvent {
     @Column(nullable = false)
     private String eventType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime timestamp;
+
+    @PrePersist
+    protected void onCreate() {
+        timestamp = LocalDateTime.now();
+    }
 
     public CustodyEvent() {
     }

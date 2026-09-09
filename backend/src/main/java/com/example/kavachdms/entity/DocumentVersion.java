@@ -36,8 +36,13 @@ public class DocumentVersion {
 
     private String changeDescription;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     public DocumentVersion() {
     }

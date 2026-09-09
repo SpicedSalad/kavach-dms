@@ -1,5 +1,7 @@
 package com.example.kavachdms.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -36,14 +38,20 @@ public class Document {
     @Column(nullable = false)
     private String documentName;
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     private String documentType;
 
     private String classification;
-
-    private String status;
-
+    
     @Column(nullable = false)
     private Integer currentVersion = 1;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     public Document() {
     }
@@ -88,6 +96,14 @@ public class Document {
         this.documentName = documentName;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public String getDocumentType() {
         return documentType;
     }
@@ -102,14 +118,6 @@ public class Document {
 
     public void setClassification(String classification) {
         this.classification = classification;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public Integer getCurrentVersion() {

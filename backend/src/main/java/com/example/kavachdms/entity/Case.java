@@ -1,11 +1,6 @@
 package com.example.kavachdms.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import jakarta.persistence.*;
 
 @Entity
@@ -22,6 +17,9 @@ public class Case {
     @Column(nullable = false)
     private String title;
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     @ManyToOne
     @JoinColumn(
         name = "created_by",
@@ -34,6 +32,11 @@ public class Case {
     private String status;
 
     private String classification;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     public Case() {
     }
@@ -60,6 +63,14 @@ public class Case {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getDescription() {

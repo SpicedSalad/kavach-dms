@@ -1,5 +1,7 @@
 package com.example.kavachdms.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -40,10 +42,14 @@ public class PhysicalEvidence {
 
     private String currentLocation;
 
-    private java.time.LocalDateTime collectedAt;
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    private java.time.LocalDateTime createdAt;
-
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+    
     public PhysicalEvidence() {
     }
 
@@ -117,14 +123,6 @@ public class PhysicalEvidence {
 
     public void setCurrentLocation(String currentLocation) {
         this.currentLocation = currentLocation;
-    }
-
-    public java.time.LocalDateTime getCollectedAt() {
-        return collectedAt;
-    }
-
-    public void setCollectedAt(java.time.LocalDateTime collectedAt) {
-        this.collectedAt = collectedAt;
     }
 
     public java.time.LocalDateTime getCreatedAt() {

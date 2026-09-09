@@ -38,13 +38,18 @@ public class AuditEvent {
     @Column(nullable = false)
     private String eventType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime timestamp;
 
     private String ipAddress;
 
     @Column(columnDefinition = "TEXT")
     private String details;
+
+    @PrePersist
+    protected void onCreate() {
+        timestamp = LocalDateTime.now();
+    }
 
     public AuditEvent() {
     }

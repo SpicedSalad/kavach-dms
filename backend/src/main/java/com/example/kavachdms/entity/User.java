@@ -8,7 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -27,6 +29,9 @@ public class User {
     @Column(nullable = false)
     private String passwordHash;
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
     private String department;
 
     private String designation;
@@ -34,13 +39,18 @@ public class User {
     @Column(nullable = false)
     private String status;
 
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
     @ManyToOne
     @JoinColumn(
         name = "role_id",
         foreignKey = @ForeignKey(name = "fk_user_role")
     )
     private Role role;
-    
+
     public User() {
     }
 
@@ -76,6 +86,14 @@ public class User {
         this.passwordHash = passwordHash;
     }
 
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+    
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+    
     public String getDepartment() {
         return department;
     }
