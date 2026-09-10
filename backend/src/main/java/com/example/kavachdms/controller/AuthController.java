@@ -8,6 +8,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.core.userdetails.UserDetails;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -25,20 +27,19 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(
-            @RequestParam String username,
+            @RequestParam String email,
             @RequestParam String password) {
 
         var authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
-                                username,
+                                email,
                                 password
                         )
                 );
 
-        var userDetails =
-                (org.springframework.security.core.userdetails.UserDetails)
-                        authentication.getPrincipal();
+        UserDetails userDetails =
+                (UserDetails) authentication.getPrincipal();
 
         String token = jwtService.generateToken(userDetails);
 

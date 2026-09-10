@@ -94,9 +94,16 @@ public class CaseSecurityService {
             return false;
         }
 
+        String accessLevel = membership.getAccessLevel();
+
         boolean allowed =
                 "ACTIVE".equalsIgnoreCase(membership.getStatus())
-                        && membership.getAccessLevel() != null;
+                        && accessLevel != null
+                        && (
+                        "READ".equalsIgnoreCase(accessLevel)
+                                || "WRITE".equalsIgnoreCase(accessLevel)
+                                || "FULL".equalsIgnoreCase(accessLevel)
+                );
 
         auditService.logEvent(
                 user,
