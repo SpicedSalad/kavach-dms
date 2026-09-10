@@ -3,9 +3,9 @@ import uuid
 
 from fastapi import FastAPI, UploadFile, File
 from sentence_transformers import SentenceTransformer, util
-
-import fitz
 import numpy as np
+
+from ai.ocr.ocr import extract_text_from_pdf
 
 
 app = FastAPI()
@@ -107,30 +107,52 @@ async def upload(file: UploadFile = File(...)):
 
     global chunks, embeddings
 
+    # --------------------------------------------------------
     # Read uploaded file
+    # --------------------------------------------------------
+
     contents = await file.read()
 
+    # --------------------------------------------------------
     # Generate unique document ID
+    # --------------------------------------------------------
+
     document_id = "DOC-" + uuid.uuid4().hex[:8].upper()
 
+    # --------------------------------------------------------
     # Calculate SHA-256
+    # --------------------------------------------------------
+
     file_hash = calculate_hash(contents)
 
-    # Open PDF
-    doc = fitz.open(
-        stream=contents,
-        filetype="pdf"
-    )
+    # --------------------------------------------------------
+    # OCR / Text Extraction
+    #
+    # Advaith's OCR pipeline:
+    # PDF -> digital text / OCR -> page-wise text
+    # --------------------------------------------------------
 
-    page_count = len(doc)
+    extraction_result = extract_text_from_pdf(contents)
 
+    page_count = extraction_result["page_count"]
+
+    pages = extraction_result["pages"]
+
+    # --------------------------------------------------------
     # Temporary chunks for this document
+    # --------------------------------------------------------
+
     document_chunks = []
 
-    # Extract text page by page
-    for page_number, page in enumerate(doc, start=1):
+    # --------------------------------------------------------
+    # Chunk page-wise extracted text
+    # --------------------------------------------------------
 
-        text = page.get_text()
+    for page in pages:
+
+        page_number = page["page_number"]
+
+        text = page["text"]
 
         page_chunks = chunk_page(
             text,
@@ -141,31 +163,50 @@ async def upload(file: UploadFile = File(...)):
 
         document_chunks.extend(page_chunks)
 
-    doc.close()
-
+    # --------------------------------------------------------
     # Store document metadata
+    # --------------------------------------------------------
+
     documents[document_id] = {
         "document_id": document_id,
         "filename": file.filename,
         "sha256": file_hash,
         "pages": page_count,
-        "chunks": len(document_chunks)
+        "chunks": len(document_chunks),
+
+        # OCR metadata
+        "extraction_method": extraction_result["extraction_method"],
+        "digital_pages": extraction_result["digital_pages"],
+        "ocr_pages": extraction_result["ocr_pages"]
     }
 
+    # --------------------------------------------------------
     # Add new chunks to global search index
+    # --------------------------------------------------------
+
     chunks.extend(document_chunks)
 
+    # --------------------------------------------------------
     # Extract text from all chunks
+    # --------------------------------------------------------
+
     texts = [
         chunk["text"]
         for chunk in chunks
     ]
 
+    # --------------------------------------------------------
     # Rebuild embeddings for all documents
+    # --------------------------------------------------------
+
     embeddings = model.encode(
         texts,
         show_progress_bar=True
     )
+
+    # --------------------------------------------------------
+    # Return processing information
+    # --------------------------------------------------------
 
     return {
         "document_id": document_id,
@@ -175,6 +216,12 @@ async def upload(file: UploadFile = File(...)):
         "chunks_created": len(document_chunks),
         "total_chunks_indexed": len(chunks),
         "embedding_dimensions": embeddings.shape[1],
+
+        # OCR information
+        "extraction_method": extraction_result["extraction_method"],
+        "digital_pages": extraction_result["digital_pages"],
+        "ocr_pages": extraction_result["ocr_pages"],
+
         "status": "processed"
     }
 
@@ -202,7 +249,10 @@ async def verify(file: UploadFile = File(...)):
 
     current_hash = calculate_hash(contents)
 
+    # --------------------------------------------------------
     # Find document by filename
+    # --------------------------------------------------------
+
     matching_document = None
 
     for document in documents.values():
@@ -212,18 +262,27 @@ async def verify(file: UploadFile = File(...)):
             matching_document = document
             break
 
+    # --------------------------------------------------------
     # Original document not found
+    # --------------------------------------------------------
+
     if matching_document is None:
 
         return {
             "filename": file.filename,
             "status": "UNKNOWN",
-            "message": "No original document with this filename has been uploaded."
+            "message": (
+                "No original document with this filename "
+                "has been uploaded."
+            )
         }
+
+    # --------------------------------------------------------
+    # Hash comparison
+    # --------------------------------------------------------
 
     original_hash = matching_document["sha256"]
 
-    # Hash comparison
     if current_hash == original_hash:
 
         return {
@@ -268,7 +327,6 @@ def search(query: str):
         query_embedding,
         embeddings
     )[0]
-
 
     # --------------------------------------------------------
     # Keyword search
@@ -317,7 +375,6 @@ def search(query: str):
             "final_score": final_score
         })
 
-
     # --------------------------------------------------------
     # Sort by combined score
     # --------------------------------------------------------
@@ -326,7 +383,6 @@ def search(query: str):
         key=lambda x: x["final_score"],
         reverse=True
     )
-
 
     # --------------------------------------------------------
     # Top 5 results
@@ -353,7 +409,6 @@ def search(query: str):
             "page": chunks[index]["page"],
             "text": chunks[index]["text"]
         })
-
 
     return {
         "query": query,
