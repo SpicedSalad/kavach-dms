@@ -1,5 +1,7 @@
 package com.example.kavachdms.service;
 
+import com.example.kavachdms.dto.roles.CreateRoleRequest;
+import com.example.kavachdms.dto.roles.RoleResponse;
 import com.example.kavachdms.entity.Role;
 import com.example.kavachdms.repository.RoleRepository;
 import org.springframework.stereotype.Service;
@@ -15,16 +17,29 @@ public class RoleService {
         this.roleRepository = roleRepository;
     }
 
-    public Role createRole(Role role) {
-        return roleRepository.save(role);
+    public RoleResponse createRole(CreateRoleRequest request) {
+
+        Role role = new Role();
+
+        role.setRoleName(request.getRoleName());
+        role.setDescription(request.getDescription());
+
+        Role savedRole = roleRepository.save(role);
+
+        return RoleResponse.fromEntity(savedRole);
     }
 
-    public List<Role> getAllRoles() {
-        return roleRepository.findAll();
+    public List<RoleResponse> getAllRoles() {
+        return roleRepository.findAll()
+                .stream()
+                .map(RoleResponse::fromEntity)
+                .toList();
     }
 
-    public Role getRole(Long roleId) {
-        return roleRepository.findById(roleId)
+    public RoleResponse getRole(Long roleId) {
+        Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        return RoleResponse.fromEntity(role);
     }
 }

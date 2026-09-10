@@ -1,7 +1,9 @@
 package com.example.kavachdms.controller;
 
-import com.example.kavachdms.entity.Document;
+import com.example.kavachdms.dto.documents.CreateDocumentRequest;
+import com.example.kavachdms.dto.documents.DocumentResponse;
 import com.example.kavachdms.service.DocumentService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +19,19 @@ public class DocumentController {
     }
 
     @PostMapping
-    public Document createDocument(@RequestBody Document document) {
-        return documentService.createDocument(document);
+    public DocumentResponse createDocument(
+            @Valid @RequestBody CreateDocumentRequest request) {
+
+        return documentService.createDocument(request);
     }
 
     @GetMapping
-    public List<Document> getAllDocuments() {
+    public List<DocumentResponse> getAllDocuments() {
         return documentService.getAllDocuments();
     }
 
     @GetMapping("/{id}")
-    public Document getDocument(@PathVariable Long id) {
+    public DocumentResponse getDocument(@PathVariable Long id) {
         return documentService.getDocument(id);
     }
 

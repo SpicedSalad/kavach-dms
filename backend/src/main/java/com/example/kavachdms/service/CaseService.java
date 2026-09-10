@@ -1,5 +1,7 @@
 package com.example.kavachdms.service;
 
+import com.example.kavachdms.dto.cases.CaseResponse;
+import com.example.kavachdms.dto.cases.CreateCaseRequest;
 import com.example.kavachdms.entity.Case;
 import com.example.kavachdms.repository.CaseRepository;
 import org.springframework.stereotype.Service;
@@ -15,11 +17,27 @@ public class CaseService {
         this.caseRepository = caseRepository;
     }
 
-    public Case createCase(Case newCase) {
-        return caseRepository.save(newCase);
+    public CaseResponse createCase(CreateCaseRequest request) {
+
+        Case newCase = new Case();
+
+        newCase.setCaseNumber(request.getCaseNumber());
+        newCase.setTitle(request.getTitle());
+        newCase.setDescription(request.getDescription());
+        newCase.setClassification(request.getClassification());
+
+        // Backend-controlled field
+        newCase.setStatus("ACTIVE");
+
+        Case savedCase = caseRepository.save(newCase);
+
+        return CaseResponse.fromEntity(savedCase);
     }
 
-    public List<Case> getAllCases() {
-        return caseRepository.findAll();
+    public List<CaseResponse> getAllCases() {
+        return caseRepository.findAll()
+                .stream()
+                .map(CaseResponse::fromEntity)
+                .toList();
     }
 }

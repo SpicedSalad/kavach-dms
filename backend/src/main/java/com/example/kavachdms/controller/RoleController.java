@@ -1,7 +1,9 @@
 package com.example.kavachdms.controller;
 
-import com.example.kavachdms.entity.Role;
+import com.example.kavachdms.dto.roles.CreateRoleRequest;
+import com.example.kavachdms.dto.roles.RoleResponse;
 import com.example.kavachdms.service.RoleService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +19,19 @@ public class RoleController {
     }
 
     @PostMapping
-    public Role createRole(@RequestBody Role role) {
-        return roleService.createRole(role);
+    public RoleResponse createRole(
+            @Valid @RequestBody CreateRoleRequest request) {
+
+        return roleService.createRole(request);
     }
 
     @GetMapping
-    public List<Role> getAllRoles() {
+    public List<RoleResponse> getAllRoles() {
         return roleService.getAllRoles();
     }
 
     @GetMapping("/{roleId}")
-    public Role getRole(@PathVariable Long roleId) {
+    public RoleResponse getRole(@PathVariable Long roleId) {
         return roleService.getRole(roleId);
     }
 }

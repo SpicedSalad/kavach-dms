@@ -1,7 +1,15 @@
 package com.example.kavachdms.service;
 
+import com.example.kavachdms.dto.caseMember.AddCaseMemberRequest;
+import com.example.kavachdms.dto.caseMember.CaseMemberResponse;
+import com.example.kavachdms.entity.Case;
 import com.example.kavachdms.entity.CaseMember;
+import com.example.kavachdms.entity.Role;
+import com.example.kavachdms.entity.User;
 import com.example.kavachdms.repository.CaseMemberRepository;
+import com.example.kavachdms.repository.CaseRepository;
+import com.example.kavachdms.repository.RoleRepository;
+import com.example.kavachdms.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,22 +18,60 @@ import java.util.List;
 public class CaseMemberService {
 
     private final CaseMemberRepository caseMemberRepository;
+    private final CaseRepository caseRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
-    public CaseMemberService(CaseMemberRepository caseMemberRepository) {
+    public CaseMemberService(
+            CaseMemberRepository caseMemberRepository,
+            CaseRepository caseRepository,
+            UserRepository userRepository,
+            RoleRepository roleRepository) {
+
         this.caseMemberRepository = caseMemberRepository;
+        this.caseRepository = caseRepository;
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
-    public CaseMember addMember(CaseMember caseMember) {
-        return caseMemberRepository.save(caseMember);
+    public CaseMemberResponse addMember(AddCaseMemberRequest request) {
+
+        Case caseEntity = caseRepository.findById(request.getCaseId())
+                .orElseThrow(() -> new RuntimeException("Case not found"));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role not found"));
+
+        CaseMember caseMember = new CaseMember();
+
+        caseMember.setCaseEntity(caseEntity);
+        caseMember.setUser(user);
+        caseMember.setRole(role);
+        caseMember.setAccessLevel(request.getAccessLevel());
+        caseMember.setStatus(request.getStatus());
+
+        CaseMember savedMember = caseMemberRepository.save(caseMember);
+
+        return CaseMemberResponse.fromEntity(savedMember);
     }
 
-    public List<CaseMember> getAllMembers() {
-        return caseMemberRepository.findAll();
+    public List<CaseMemberResponse> getAllMembers() {
+
+        return caseMemberRepository.findAll()
+                .stream()
+                .map(CaseMemberResponse::fromEntity)
+                .toList();
     }
 
-    public CaseMember getMember(Long id) {
-        return caseMemberRepository.findById(id)
+    public CaseMemberResponse getMember(Long id) {
+
+        CaseMember caseMember = caseMemberRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Case member not found"));
+
+        return CaseMemberResponse.fromEntity(caseMember);
     }
 
     public void removeMember(Long id) {

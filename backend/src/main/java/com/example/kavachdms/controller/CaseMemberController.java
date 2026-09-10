@@ -1,7 +1,9 @@
 package com.example.kavachdms.controller;
 
-import com.example.kavachdms.entity.CaseMember;
+import com.example.kavachdms.dto.caseMember.AddCaseMemberRequest;
+import com.example.kavachdms.dto.caseMember.CaseMemberResponse;
 import com.example.kavachdms.service.CaseMemberService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +19,19 @@ public class CaseMemberController {
     }
 
     @PostMapping
-    public CaseMember addMember(@RequestBody CaseMember caseMember) {
-        return caseMemberService.addMember(caseMember);
+    public CaseMemberResponse addMember(
+            @Valid @RequestBody AddCaseMemberRequest request) {
+
+        return caseMemberService.addMember(request);
     }
 
     @GetMapping
-    public List<CaseMember> getAllMembers() {
+    public List<CaseMemberResponse> getAllMembers() {
         return caseMemberService.getAllMembers();
     }
 
     @GetMapping("/{id}")
-    public CaseMember getMember(@PathVariable Long id) {
+    public CaseMemberResponse getMember(@PathVariable Long id) {
         return caseMemberService.getMember(id);
     }
 

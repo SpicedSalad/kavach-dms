@@ -1,7 +1,10 @@
 package com.example.kavachdms.controller;
 
-import com.example.kavachdms.entity.AuditEvent;
+import com.example.kavachdms.dto.auditEvent.AuditEventResponse;
+import com.example.kavachdms.dto.auditEvent.CreateAuditEventRequest;
 import com.example.kavachdms.service.AuditEventService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,17 +20,28 @@ public class AuditEventController {
     }
 
     @PostMapping
-    public AuditEvent createEvent(@RequestBody AuditEvent event) {
-        return auditEventService.createEvent(event);
+    public ResponseEntity<AuditEventResponse> createAuditEvent(
+            @Valid @RequestBody CreateAuditEventRequest request) {
+
+        return ResponseEntity.ok(
+                auditEventService.createAuditEvent(request)
+        );
     }
 
     @GetMapping
-    public List<AuditEvent> getAllEvents() {
-        return auditEventService.getAllEvents();
+    public ResponseEntity<List<AuditEventResponse>> getAllAuditEvents() {
+
+        return ResponseEntity.ok(
+                auditEventService.getAllAuditEvents()
+        );
     }
 
     @GetMapping("/{id}")
-    public AuditEvent getEvent(@PathVariable Long id) {
-        return auditEventService.getEvent(id);
+    public ResponseEntity<AuditEventResponse> getAuditEventById(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                auditEventService.getAuditEventById(id)
+        );
     }
 }
