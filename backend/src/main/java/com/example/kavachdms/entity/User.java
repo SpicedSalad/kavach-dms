@@ -117,4 +117,12 @@ public class User {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }
