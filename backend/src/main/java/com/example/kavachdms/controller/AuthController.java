@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.security.core.userdetails.UserDetails;
 
+import org.springframework.security.core.AuthenticationException;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -30,19 +32,26 @@ public class AuthController {
             @RequestParam String email,
             @RequestParam String password) {
 
-        var authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                password
-                        )
-                );
+        try {
+            var authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    email,
+                                    password
+                            )
+                    );
 
-        UserDetails userDetails =
-                (UserDetails) authentication.getPrincipal();
+            UserDetails userDetails =
+                    (UserDetails) authentication.getPrincipal();
 
-        String token = jwtService.generateToken(userDetails);
+            String token = jwtService.generateToken(userDetails);
 
-        return ResponseEntity.ok(token);
+            return ResponseEntity.ok(token);
+
+        } catch (AuthenticationException e) {
+            return ResponseEntity
+                    .status(401)
+                    .body("Invalid email or password");
+        }
     }
 }

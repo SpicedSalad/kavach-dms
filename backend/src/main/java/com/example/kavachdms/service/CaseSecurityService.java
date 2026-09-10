@@ -6,7 +6,6 @@ import com.example.kavachdms.entity.User;
 import com.example.kavachdms.repository.CaseMemberRepository;
 import com.example.kavachdms.repository.CaseRepository;
 import com.example.kavachdms.repository.UserRepository;
-
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -30,37 +29,51 @@ public class CaseSecurityService {
         this.auditService = auditService;
     }
 
-    public boolean canAccessCase(
-            Authentication authentication,
-            Long caseId) {
+    public boolean canReadCase(Authentication authentication, Long caseId) {
+        return checkCaseAccess(authentication, caseId, "READ");
+    }
 
-        if (authentication == null ||
-                !authentication.isAuthenticated()) {
+    public boolean canWriteCase(Authentication authentication, Long caseId) {
+        return checkCaseAccess(authentication, caseId, "WRITE");
+    }
+
+    public boolean canManageCase(Authentication authentication, Long caseId) {
+        return checkCaseAccess(authentication, caseId, "FULL");
+    }
+
+    /*
+     * Kept for existing code/tests that only need to check
+     * whether the user has any valid access to the case.
+     */
+    public boolean canAccessCase(Authentication authentication, Long caseId) {
+        return canReadCase(authentication, caseId);
+    }
+
+    private boolean checkCaseAccess(
+            Authentication authentication,
+            Long caseId,
+            String requiredLevel) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
 
-        Case caseEntity = caseRepository.findById(caseId)
-                .orElse(null);
+        Case caseEntity = caseRepository.findById(caseId).orElse(null);
 
         if (caseEntity == null) {
             return false;
         }
 
-        User user = userRepository.findByEmail(
-                authentication.getName()
-        ).orElse(null);
+        User user = userRepository.findByEmail(authentication.getName()).orElse(null);
 
         if (user == null) {
             return false;
         }
 
-        boolean isAdmin = authentication.getAuthorities()
-                .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (isAdmin) {
-
             auditService.logEvent(
                     user,
                     caseEntity,
@@ -69,7 +82,6 @@ public class CaseSecurityService {
                     null,
                     "Administrator access"
             );
-
             return true;
         }
 
@@ -81,7 +93,6 @@ public class CaseSecurityService {
                 .orElse(null);
 
         if (membership == null) {
-
             auditService.logEvent(
                     user,
                     caseEntity,
@@ -90,7 +101,6 @@ public class CaseSecurityService {
                     null,
                     "User is not a member of this case"
             );
-
             return false;
         }
 
@@ -98,12 +108,7 @@ public class CaseSecurityService {
 
         boolean allowed =
                 "ACTIVE".equalsIgnoreCase(membership.getStatus())
-                        && accessLevel != null
-                        && (
-                        "READ".equalsIgnoreCase(accessLevel)
-                                || "WRITE".equalsIgnoreCase(accessLevel)
-                                || "FULL".equalsIgnoreCase(accessLevel)
-                );
+                        && hasRequiredAccess(accessLevel, requiredLevel);
 
         auditService.logEvent(
                 user,
@@ -112,10 +117,31 @@ public class CaseSecurityService {
                 allowed ? "ACCESS_GRANTED" : "ACCESS_DENIED",
                 null,
                 allowed
-                        ? "Active case membership"
-                        : "Inactive membership or missing access level"
+                        ? "Access level: " + accessLevel
+                        : "Insufficient access level: " + accessLevel
         );
 
         return allowed;
+    }
+
+    private boolean hasRequiredAccess(
+            String actualLevel,
+            String requiredLevel) {
+
+        if (actualLevel == null) {
+            return false;
+        }
+
+        if ("FULL".equalsIgnoreCase(actualLevel)) {
+            return true;
+        }
+
+        if ("WRITE".equalsIgnoreCase(actualLevel)) {
+            return "READ".equalsIgnoreCase(requiredLevel)
+                    || "WRITE".equalsIgnoreCase(requiredLevel);
+        }
+
+        return "READ".equalsIgnoreCase(actualLevel)
+                && "READ".equalsIgnoreCase(requiredLevel);
     }
 }
