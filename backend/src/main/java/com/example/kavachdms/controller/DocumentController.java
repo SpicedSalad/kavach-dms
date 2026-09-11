@@ -79,6 +79,14 @@ public class DocumentController {
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
 
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("Authentication required");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("File cannot be empty");
+        }
+
         Document document = documentRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Document not found"));
@@ -103,12 +111,18 @@ public class DocumentController {
                         + "/v" + nextVersion
                         + "/" + file.getOriginalFilename();
 
+        // Calculate SHA-256 before storing the file
+        String sha256Hash =
+                minIOStorageService.calculateSha256(file);
+        
+        // Upload actual file to MinIO
         String storageKey =
                 minIOStorageService.uploadFile(
                         file,
                         objectKey
                 );
 
+        // Create version metadata
         DocumentVersion version = new DocumentVersion();
 
         version.setId(
@@ -118,8 +132,16 @@ public class DocumentController {
         version.setDocument(document);
         version.setUploadedBy(user);
         version.setStorageKey(storageKey);
+        version.setSha256Hash(sha256Hash);
+
+        System.out.println("DEBUG SHA256 = [" + sha256Hash + "]");
+        System.out.println("DEBUG ENTITY SHA256 = [" + version.getSha256Hash() + "]");
 
         documentVersionRepository.save(version);
+
+        // Update current version
+        document.setCurrentVersion(nextVersion);
+        documentRepository.save(document);
 
         return "Uploaded successfully: " + storageKey;
     }
