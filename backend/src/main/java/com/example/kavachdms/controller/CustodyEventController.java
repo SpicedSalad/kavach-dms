@@ -4,7 +4,7 @@ import com.example.kavachdms.dto.custodyEvent.CreateCustodyEventRequest;
 import com.example.kavachdms.dto.custodyEvent.CustodyEventResponse;
 import com.example.kavachdms.service.CustodyEventService;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,32 +15,32 @@ public class CustodyEventController {
 
     private final CustodyEventService custodyEventService;
 
-    public CustodyEventController(CustodyEventService custodyEventService) {
+    public CustodyEventController(
+            CustodyEventService custodyEventService) {
         this.custodyEventService = custodyEventService;
     }
 
     @PostMapping
-    public ResponseEntity<CustodyEventResponse> createCustodyEvent(
-            @Valid @RequestBody CreateCustodyEventRequest request) {
+    public CustodyEventResponse createCustodyEvent(
+            @Valid @RequestBody CreateCustodyEventRequest request,
+            Authentication authentication) {
 
-        return ResponseEntity.ok(
-                custodyEventService.createCustodyEvent(request)
+        return custodyEventService.createCustodyEvent(
+                request,
+                authentication
         );
     }
 
     @GetMapping
-    public ResponseEntity<List<CustodyEventResponse>> getAllCustodyEvents() {
-        return ResponseEntity.ok(
-                custodyEventService.getAllCustodyEvents()
-        );
+    public List<CustodyEventResponse> getAllCustodyEvents(
+            Authentication authentication) {
+        return custodyEventService.getAllCustodyEvents(authentication);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CustodyEventResponse> getCustodyEventById(
-            @PathVariable Long id) {
-
-        return ResponseEntity.ok(
-                custodyEventService.getCustodyEventById(id)
-        );
+    public CustodyEventResponse getCustodyEventById(
+            @PathVariable Long id,
+            Authentication authentication) {
+        return custodyEventService.getCustodyEventById(id, authentication);
     }
 }

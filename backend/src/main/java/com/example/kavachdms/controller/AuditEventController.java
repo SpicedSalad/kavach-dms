@@ -1,9 +1,7 @@
 package com.example.kavachdms.controller;
 
 import com.example.kavachdms.dto.auditEvent.AuditEventResponse;
-import com.example.kavachdms.dto.auditEvent.CreateAuditEventRequest;
 import com.example.kavachdms.service.AuditEventService;
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,15 +15,6 @@ public class AuditEventController {
 
     public AuditEventController(AuditEventService auditEventService) {
         this.auditEventService = auditEventService;
-    }
-
-    @PostMapping
-    public ResponseEntity<AuditEventResponse> createAuditEvent(
-            @Valid @RequestBody CreateAuditEventRequest request) {
-
-        return ResponseEntity.ok(
-                auditEventService.createAuditEvent(request)
-        );
     }
 
     @GetMapping

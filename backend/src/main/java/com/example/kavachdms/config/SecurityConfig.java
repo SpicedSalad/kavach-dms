@@ -55,6 +55,12 @@ public class SecurityConfig {
                         .requestMatchers("/forensics/**")
                         .hasAnyRole("FORENSIC", "ADMIN")
 
+                        .requestMatchers("/api/roles/**")
+                        .hasRole("ADMIN")
+
+                        .requestMatchers("/api/audit-events/**")
+                        .hasRole("ADMIN")
+
                         .anyRequest().authenticated()
                 )
 

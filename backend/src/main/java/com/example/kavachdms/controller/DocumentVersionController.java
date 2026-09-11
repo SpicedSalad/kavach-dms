@@ -6,6 +6,7 @@ import com.example.kavachdms.service.DocumentVersionService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/document-versions")
@@ -18,23 +19,33 @@ public class DocumentVersionController {
     }
 
     @PostMapping
-    public DocumentVersion createVersion(@RequestBody DocumentVersion version) {
-        return documentVersionService.createVersion(version);
+    public DocumentVersion createVersion(
+            @RequestBody DocumentVersion version,
+            Authentication authentication) {
+
+        return documentVersionService.createVersion(
+                version,
+                authentication);
     }
 
     @GetMapping
-    public List<DocumentVersion> getAllVersions() {
-        return documentVersionService.getAllVersions();
+    public List<DocumentVersion> getAllVersions(
+            Authentication authentication) {
+
+        return documentVersionService.getAllVersions(authentication);
     }
 
     @GetMapping("/{documentId}/{versionNumber}")
     public DocumentVersion getVersion(
             @PathVariable Long documentId,
-            @PathVariable Integer versionNumber) {
+            @PathVariable Integer versionNumber,
+            Authentication authentication) {
 
         DocumentVersionId id =
                 new DocumentVersionId(documentId, versionNumber);
 
-        return documentVersionService.getVersion(id);
+        return documentVersionService.getVersion(
+                id,
+                authentication);
     }
 }

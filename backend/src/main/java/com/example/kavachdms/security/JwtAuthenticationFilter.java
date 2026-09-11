@@ -75,6 +75,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder
                             .getContext()
                             .setAuthentication(authentication);
+
+                } else {
+                    System.out.println("JWT INVALID for: " + username);
                 }
             }
         } catch (UsernameNotFoundException e) {
