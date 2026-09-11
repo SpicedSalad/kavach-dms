@@ -1,0 +1,18 @@
+# Copyright KavachDMS Project. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ---------------------------------------------------------------------------
+# Cryptogen configuration for Orderer organization
+# ---------------------------------------------------------------------------
+# Single orderer node for MVP development.
+# ---------------------------------------------------------------------------
+
+OrdererOrgs:
+  - Name: Orderer
+    Domain: kavach.example.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+        SANS:
+          - localhost
+          - 127.0.0.1

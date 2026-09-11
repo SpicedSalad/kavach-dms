@@ -1,0 +1,190 @@
+# Copyright KavachDMS Project. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# ---------------------------------------------------------------------------
+# KavachDMS Fabric Network - Docker Compose
+# ---------------------------------------------------------------------------
+# Minimal single-org development network:
+#   - 1 EtcdRaft Orderer
+#   - 1 Peer (Org1)
+#   - 1 Fabric CA (Org1)
+#   - 1 CLI container (for admin operations)
+#
+# No CouchDB — uses LevelDB (default, sufficient for MVP).
+# ---------------------------------------------------------------------------
+
+volumes:
+  orderer.kavach.example.com:
+  peer0.org1.kavach.example.com:
+
+networks:
+  kavach_fabric:
+    name: kavach_fabric
+
+services:
+
+  # =========================================================================
+  # Orderer — Single EtcdRaft node
+  # =========================================================================
+  orderer.kavach.example.com:
+    container_name: orderer.kavach.example.com
+    image: hyperledger/fabric-orderer:2.5
+    labels:
+      service: hyperledger-fabric
+      project: kavach-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      # TLS
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # EtcdRaft cluster
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      # Bootstrap — use channel participation API (Fabric 2.5 modern approach)
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=none
+      # Channel participation (Fabric 2.5)
+      - ORDERER_CHANNELPARTICIPATION_ENABLED=true
+      - ORDERER_ADMIN_TLS_ENABLED=true
+      - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+      # Operations
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer.kavach.example.com:9443
+      - ORDERER_METRICS_PROVIDER=prometheus
+    working_dir: /root
+    command: orderer
+    volumes:
+      - ../channel-artifacts:/var/hyperledger/orderer/channel-artifacts
+      - ../organizations/ordererOrganizations/kavach.example.com/orderers/orderer.kavach.example.com/msp:/var/hyperledger/orderer/msp
+      - ../organizations/ordererOrganizations/kavach.example.com/orderers/orderer.kavach.example.com/tls:/var/hyperledger/orderer/tls
+      - orderer.kavach.example.com:/var/hyperledger/production/orderer
+    ports:
+      - "7050:7050"
+      - "7053:7053"
+      - "9443:9443"
+    networks:
+      - kavach_fabric
+
+  # =========================================================================
+  # Peer0 Org1 — KavachDMS peer
+  # =========================================================================
+  peer0.org1.kavach.example.com:
+    container_name: peer0.org1.kavach.example.com
+    image: hyperledger/fabric-peer:2.5
+    labels:
+      service: hyperledger-fabric
+      project: kavach-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      # Peer
+      - CORE_PEER_ID=peer0.org1.kavach.example.com
+      - CORE_PEER_ADDRESS=peer0.org1.kavach.example.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.kavach.example.com:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.kavach.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.kavach.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
+      # TLS
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      # Docker (for chaincode containers)
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=kavach_fabric
+      # Operations
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.kavach.example.com:9444
+      - CORE_METRICS_PROVIDER=prometheus
+    working_dir: /root
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ../organizations/peerOrganizations/org1.kavach.example.com/peers/peer0.org1.kavach.example.com/msp:/etc/hyperledger/fabric/msp
+      - ../organizations/peerOrganizations/org1.kavach.example.com/peers/peer0.org1.kavach.example.com/tls:/etc/hyperledger/fabric/tls
+      - peer0.org1.kavach.example.com:/var/hyperledger/production
+    ports:
+      - "7051:7051"
+      - "9444:9444"
+    depends_on:
+      - orderer.kavach.example.com
+    networks:
+      - kavach_fabric
+
+  # =========================================================================
+  # Fabric CA — Org1 Certificate Authority
+  # =========================================================================
+  # Role: Fabric CA provides a production-grade certificate authority for
+  # enrolling and registering identities. In this MVP, crypto material is
+  # initially generated by cryptogen (dev convenience tool), but the CA
+  # container is included to:
+  #   1. Demonstrate the CA component for SIH presentation
+  #   2. Allow runtime identity enrollment if needed
+  #   3. Provide a clear upgrade path to production identity management
+  #
+  # cryptogen = quick dev/test crypto generation (generates all certs at once)
+  # Fabric CA = production identity lifecycle (enroll, register, revoke)
+  # =========================================================================
+  ca.org1.kavach.example.com:
+    container_name: ca.org1.kavach.example.com
+    image: hyperledger/fabric-ca:1.5
+    labels:
+      service: hyperledger-fabric
+      project: kavach-fabric
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org1
+      - FABRIC_CA_SERVER_TLS_ENABLED=true
+      - FABRIC_CA_SERVER_PORT=7054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:17054
+    ports:
+      - "7054:7054"
+      - "17054:17054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d'
+    volumes:
+      - ../organizations/fabric-ca/org1:/etc/hyperledger/fabric-ca-server
+    networks:
+      - kavach_fabric
+
+  # =========================================================================
+  # CLI — Admin operations container
+  # =========================================================================
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:2.5
+    labels:
+      service: hyperledger-fabric
+      project: kavach-fabric
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.kavach.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.kavach.example.com/peers/peer0.org1.kavach.example.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.kavach.example.com/peers/peer0.org1.kavach.example.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.kavach.example.com/peers/peer0.org1.kavach.example.com/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations/peerOrganizations/org1.kavach.example.com/users/Admin@org1.kavach.example.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - ../organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
+      - ../channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+      - ../config:/opt/gopath/src/github.com/hyperledger/fabric/peer/configtx
+    depends_on:
+      - peer0.org1.kavach.example.com
+    networks:
+      - kavach_fabric

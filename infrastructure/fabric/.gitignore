@@ -1,0 +1,23 @@
+# ============================================================
+# KavachDMS Fabric Infrastructure - Generated Files
+# ============================================================
+# These files are generated at runtime and MUST NOT be committed.
+# They contain private keys, certificates, and other crypto material.
+
+# Generated crypto material (contains private keys!)
+organizations/ordererOrganizations/
+organizations/peerOrganizations/
+
+# Generated channel artifacts (genesis block, channel tx)
+channel-artifacts/*.block
+channel-artifacts/*.tx
+
+# Generated connection profiles (contain embedded certificates)
+connection-profile/*.json
+connection-profile/*.yaml
+
+# Chaincode packages
+*.tar.gz
+
+# Fabric CA server data
+fabric-ca-server/
