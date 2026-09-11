@@ -21,3 +21,8 @@ connection-profile/*.yaml
 
 # Fabric CA server data
 fabric-ca-server/
+
+# Generated crypto material (contains private keys!)
+organizations/ordererOrganizations/
+organizations/peerOrganizations/
+organizations/fabric-ca/
