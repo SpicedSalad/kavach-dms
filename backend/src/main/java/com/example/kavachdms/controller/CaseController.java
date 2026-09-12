@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
 
 
 @RestController
@@ -21,13 +22,15 @@ public class CaseController {
 
     @PostMapping
     public CaseResponse createCase(
-            @Valid @RequestBody CreateCaseRequest request) {
+            @Valid @RequestBody CreateCaseRequest request,
+            Authentication authentication) {
 
-        return caseService.createCase(request);
+        return caseService.createCase(request, authentication);
     }
 
     @GetMapping
-    public List<CaseResponse> getAllCases() {
-        return caseService.getAllCases();
+    public List<CaseResponse> getAllCases(
+            Authentication authentication) {
+        return caseService.getAllCases(authentication);
     }
 }

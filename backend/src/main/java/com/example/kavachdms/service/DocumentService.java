@@ -10,6 +10,7 @@ import com.example.kavachdms.repository.CaseRepository;
 import com.example.kavachdms.repository.DocumentRepository;
 import com.example.kavachdms.repository.PhysicalEvidenceRepository;
 import com.example.kavachdms.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,26 +22,45 @@ public class DocumentService {
     private final CaseRepository caseRepository;
     private final UserRepository userRepository;
     private final PhysicalEvidenceRepository physicalEvidenceRepository;
+    private final CaseSecurityService caseSecurityService;
+    private final DocumentSecurityService documentSecurityService;
 
     public DocumentService(
             DocumentRepository documentRepository,
             CaseRepository caseRepository,
             UserRepository userRepository,
-            PhysicalEvidenceRepository physicalEvidenceRepository) {
+            PhysicalEvidenceRepository physicalEvidenceRepository,
+            CaseSecurityService caseSecurityService,
+            DocumentSecurityService documentSecurityService) {
 
         this.documentRepository = documentRepository;
         this.caseRepository = caseRepository;
         this.userRepository = userRepository;
         this.physicalEvidenceRepository = physicalEvidenceRepository;
+        this.caseSecurityService = caseSecurityService;
+        this.documentSecurityService = documentSecurityService;
     }
 
-    public DocumentResponse createDocument(CreateDocumentRequest request) {
+    public DocumentResponse createDocument(
+            CreateDocumentRequest request,
+            Authentication authentication) {
 
         Case caseEntity = caseRepository.findById(request.getCaseId())
-                .orElseThrow(() -> new RuntimeException("Case not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("Case not found"));
 
-        User creator = userRepository.findById(request.getCreatedBy())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!caseSecurityService.canWriteCase(
+                authentication,
+                caseEntity.getCaseId())) {
+
+            throw new RuntimeException(
+                    "Insufficient permission to create document");
+        }
+
+        User creator = userRepository
+                .findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("Authenticated user not found"));
 
         Document document = new Document();
 
@@ -58,34 +78,82 @@ public class DocumentService {
             PhysicalEvidence evidence =
                     physicalEvidenceRepository.findById(request.getEvidenceId())
                             .orElseThrow(() ->
-                                    new RuntimeException("Physical evidence not found"));
+                                    new RuntimeException(
+                                            "Physical evidence not found"));
+
+            /*
+             * Evidence must belong to the same case
+             * as the document.
+             */
+            if (!evidence.getCaseEntity()
+                    .getCaseId()
+                    .equals(caseEntity.getCaseId())) {
+
+                throw new RuntimeException(
+                        "Physical evidence does not belong to this case");
+            }
 
             document.setEvidence(evidence);
         }
 
-        Document savedDocument = documentRepository.save(document);
+        Document savedDocument =
+                documentRepository.save(document);
 
         return DocumentResponse.fromEntity(savedDocument);
     }
 
-    public List<DocumentResponse> getAllDocuments() {
+    public List<DocumentResponse> getAllDocuments(
+            Authentication authentication) {
 
         return documentRepository.findAll()
                 .stream()
+                .filter(document ->
+                        documentSecurityService.canReadDocument(
+                                authentication,
+                                document))
                 .map(DocumentResponse::fromEntity)
                 .toList();
     }
 
-    public DocumentResponse getDocument(Long id) {
+    public DocumentResponse getDocument(
+            Long id,
+            Authentication authentication) {
 
-        Document document = documentRepository.findById(id)
-                .orElseThrow(() ->
-                        new RuntimeException("Document not found"));
+        Document document =
+                documentRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Document not found"));
+
+        if (!documentSecurityService.canReadDocument(
+                authentication,
+                document)) {
+
+            throw new RuntimeException(
+                    "Insufficient permission to view document");
+        }
 
         return DocumentResponse.fromEntity(document);
     }
 
-    public void deleteDocument(Long id) {
-        documentRepository.deleteById(id);
+    public void deleteDocument(
+            Long id,
+            Authentication authentication) {
+
+        Document document =
+                documentRepository.findById(id)
+                        .orElseThrow(() ->
+                                new RuntimeException(
+                                        "Document not found"));
+
+        if (!documentSecurityService.canManageDocument(
+                authentication,
+                document)) {
+
+            throw new RuntimeException(
+                    "Insufficient permission to delete document");
+        }
+
+        documentRepository.delete(document);
     }
 }
