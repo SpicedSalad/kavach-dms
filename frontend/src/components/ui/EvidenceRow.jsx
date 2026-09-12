@@ -5,7 +5,7 @@ import { Package, ChevronDown, ChevronUp, Link as LinkIcon, QrCode } from 'lucid
 import { Link } from 'react-router-dom';
 import { CustodyTimeline } from './CustodyTimeline';
 
-export function EvidenceRow({ item }) {
+export function EvidenceRow({ item, onTransferClick }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -62,7 +62,9 @@ export function EvidenceRow({ item }) {
           <div className="md:col-span-2 space-y-4">
             <h4 className="text-[13px] font-semibold text-gray-600 uppercase tracking-wider flex items-center justify-between">
               <div className="flex items-center"><LinkIcon className="w-4 h-4 mr-2 text-slate-500"/> Chain of Custody Timeline</div>
-              <Button variant="secondary" className="text-xs py-1 px-3">Log Transfer</Button>
+              <Button variant="secondary" className="text-xs py-1 px-3" onClick={onTransferClick}>
+                Log Transfer
+              </Button>
             </h4>
             <div className="bg-white border border-gray-200 rounded-sm p-6 text-sm">
               <CustodyTimeline chain={item.chain} />

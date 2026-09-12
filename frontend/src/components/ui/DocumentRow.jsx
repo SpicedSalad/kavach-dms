@@ -59,7 +59,11 @@ export function DocumentRow({ doc }) {
             <div className="bg-white border border-gray-200 rounded-sm p-4 text-sm">
               <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-100">
                 <span className="text-gray-500">SHA-256</span>
-                <span className="col-span-2 font-mono text-gray-900 truncate" title={doc.hash}>{doc.hash}</span>
+                <span className="col-span-2 font-mono text-gray-900 truncate text-xs" title={doc.hash}>{doc.hash}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-100">
+                <span className="text-gray-500">Version</span>
+                <span className="col-span-2 font-mono font-bold text-blue-700">v{doc.currentVersion || 1}</span>
               </div>
               <div className="grid grid-cols-3 gap-2 mb-3 pb-3 border-b border-gray-100">
                 <span className="text-gray-500">Blockchain Record</span>

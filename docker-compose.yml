@@ -72,6 +72,23 @@ services:
     networks:
       - kavach-net
 
+  # ----------------------------------------------------------------------------
+  # 4. Web Frontend (React + Vite + Tailwind + Nginx Proxy)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kavach-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+      - ai-service
+    restart: unless-stopped
+    networks:
+      - kavach-net
+
 # ------------------------------------------------------------------------------
 # Networks & Persistent Volumes
 # ------------------------------------------------------------------------------
