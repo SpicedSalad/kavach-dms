@@ -1,0 +1,16 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Document Processing & OCR
+PyMuPDF
+pytesseract
+Pillow
+spacy
+
+# Embeddings & NLP (CPU-only PyTorch index to minimize image size)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+sentence-transformers
+numpy
